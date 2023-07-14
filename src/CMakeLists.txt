@@ -1,0 +1,5 @@
+choreonoid_add_simple_controller(ROSGen2Controller2 ROSGen2Controller2.cpp)
+target_link_libraries(ROSGen2Controller2 ${catkin_LIBRARIES})
+
+choreonoid_add_simple_controller(ROSGen2Controller3 ROSGen2Controller3.cpp)
+target_link_libraries(ROSGen2Controller3 ${catkin_LIBRARIES})
