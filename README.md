@@ -1,2 +1,2 @@
 # choreonoid_ros_gen2
-Choreonoid samples using ROS
+Choreonoid samples using ROS1
