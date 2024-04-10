@@ -9,36 +9,35 @@
 #include <ros/node_handle.h>
 #include <sensor_msgs/Joy.h>
 #include <mutex>
+
 #include <kinova_msgs/PoseVelocity.h>
 
-using namespace std;
 using namespace cnoid;
 
 class ROSGen2Controller3 : public SimpleController
 {
-    ros::NodeHandle node;
-    ros::Subscriber gen2Subscriber;
+    std::unique_ptr<ros::NodeHandle> node;
+    ros::Subscriber subscriber;
     kinova_msgs::PoseVelocity pose_velocity_msg;
-    std::mutex gen2Mutex;
+    std::mutex velocityMutex;
     
     Body* ioBody;
     BodyPtr ikBody;
     Link* ikWrist;
-    shared_ptr<JointPath> baseToWrist;
-    VectorXd qref, qref_old, qold;
-    double dt;
+    std::shared_ptr<JointPath> baseToWrist;
+    VectorXd qref, qold, qref_old;
+    double timeStep;
 
 public:
-
     virtual bool configure(SimpleControllerConfig* config) override
     {
-        //config->sigChanged().connect();
+        node.reset(new ros::NodeHandle);
         return true;
     }
     
     virtual bool initialize(SimpleControllerIO* io) override
     {
-        ostream& os = io->os();
+        std::ostream& os = io->os();
         ioBody = io->body();
 
         ikBody = ioBody->clone();
@@ -63,16 +62,16 @@ public:
         qref = qold;
         qref_old = qold;
 
-        dt = io->timeStep();
+        timeStep = io->timeStep();
 
-        gen2Subscriber = node.subscribe("/j2s7s300_driver/in/cartesian_velocity", 2, &ROSGen2Controller3::gen2Callback, this);
+        subscriber = node->subscribe("/j2s7s300_driver/in/cartesian_velocity", 2, &ROSGen2Controller3::velocityCallback, this);
 
         return true;
     }
 
-    void gen2Callback(const kinova_msgs::PoseVelocity& msg)
+    void velocityCallback(const kinova_msgs::PoseVelocity& msg)
     {
-        std::lock_guard<std::mutex> lock(gen2Mutex);
+        std::lock_guard<std::mutex> lock(velocityMutex);
         pose_velocity_msg = msg;
     }
 
@@ -80,7 +79,7 @@ public:
     {
         kinova_msgs::PoseVelocity pose_velocity;
         {
-            std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> lock(velocityMutex);
             pose_velocity = pose_velocity_msg;
         }
 
@@ -93,14 +92,14 @@ public:
 
         Vector3 linear(-linear_x, linear_y, linear_z);
         Vector3 angular(angular_x, -angular_y, angular_z);
-        Matrix3 rot = rotFromRpy(angular * dt);
+        Matrix3 rot = rotFromRpy(angular * timeStep);
 
         VectorXd p(6);
-        p.head<3>() = ikWrist->p() + ikBody->rootLink()->R() * (linear * dt);
-        p.tail<3>() = degree(rpyFromRot(ikWrist->R() * rot));
+        p.head<3>() = ikWrist->p() + ikBody->rootLink()->R() * (linear * timeStep);
+        p.tail<3>() = rpyFromRot(ikWrist->R() * rot);
 
         Isometry3 T;
-        T.linear() = rotFromRpy(radian(p.tail<3>()));
+        T.linear() = rotFromRpy(Vector3(p.tail<3>()));
         T.translation() = p.head<3>();
         if(baseToWrist->calcInverseKinematics(T)) {
             for(int i = 0; i < baseToWrist->numJoints(); ++i) {
@@ -112,8 +111,8 @@ public:
         for(int i = 0; i < ioBody->numJoints(); ++i) {
             Link* joint = ioBody->joint(i);
             double q = joint->q();
-            double dq = (q - qold[i]) / dt;
-            double dq_ref = (qref[i] - qref_old[i]) / dt;
+            double dq = (q - qold[i]) / timeStep;
+            double dq_ref = (qref[i] - qref_old[i]) / timeStep;
 
             joint->dq_target() = dq_ref;
             qold[i] = q;
@@ -125,7 +124,7 @@ public:
 
     virtual void stop() override
     {
-        gen2Subscriber.shutdown();
+        subscriber.shutdown();
     }
 };
 

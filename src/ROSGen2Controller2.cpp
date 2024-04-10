@@ -8,31 +8,30 @@
 #include <ros/node_handle.h>
 #include <sensor_msgs/Joy.h>
 #include <mutex>
+
 #include <kinova_msgs/JointVelocity.h>
 
-using namespace std;
 using namespace cnoid;
 
 class ROSGen2Controller2 : public SimpleController
 {
-    ros::NodeHandle node;
-    ros::Subscriber gen2Subscriber;
+    std::unique_ptr<ros::NodeHandle> node;
+    ros::Subscriber subscriber;
     kinova_msgs::JointVelocity joint_velocity_msg;
-    std::mutex gen2Mutex;
+    std::mutex velocityMutex;
     
     Body* ioBody;
 
 public:
-
     virtual bool configure(SimpleControllerConfig* config) override
     {
-        //config->sigChanged().connect();
+        node.reset(new ros::NodeHandle);
         return true;
     }
     
     virtual bool initialize(SimpleControllerIO* io) override
     {
-        ostream& os = io->os();
+        std::ostream& os = io->os();
         ioBody = io->body();
 
         for(int i = 0; i < ioBody->numJoints(); ++i) {
@@ -41,14 +40,14 @@ public:
             io->enableIO(joint);
         }
 
-        gen2Subscriber = node.subscribe("/j2s7s300_driver/in/joint_velocity", 2, &ROSGen2Controller2::gen2Callback, this);
+        subscriber = node->subscribe("/j2s7s300_driver/in/joint_velocity", 2, &ROSGen2Controller2::velocityCallback, this);
 
         return true;
     }
 
-    void gen2Callback(const kinova_msgs::JointVelocity& msg)
+    void velocityCallback(const kinova_msgs::JointVelocity& msg)
     {
-        std::lock_guard<std::mutex> lock(gen2Mutex);
+        std::lock_guard<std::mutex> lock(velocityMutex);
         joint_velocity_msg = msg;
     }
 
@@ -56,7 +55,7 @@ public:
     {
         kinova_msgs::JointVelocity joint_velocity;
         {
-            std::lock_guard<std::mutex> lock(mutex);
+            std::lock_guard<std::mutex> lock(velocityMutex);
             joint_velocity = joint_velocity_msg;
         }
 
@@ -79,7 +78,7 @@ public:
 
     virtual void stop() override
     {
-        gen2Subscriber.shutdown();
+        subscriber.shutdown();
     }
 };
 
