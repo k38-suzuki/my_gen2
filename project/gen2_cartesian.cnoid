@@ -56,7 +56,7 @@ items:
               data: 
                 isNoDelayMode: false
                 controllerOptions: ""
-                controller: "ROSGen2Controller3"
+                controller: "MyGen2CartesianController"
                 base_directory: "Controller directory"
                 reloading: false
                 export_symbols: false

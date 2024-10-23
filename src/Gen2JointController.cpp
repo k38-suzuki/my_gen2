@@ -1,5 +1,5 @@
 /**
-   ROS Gen2 Controller 2
+   Gen2 Joint Controller
    @author Kenta Suzuki
 */
 
@@ -13,7 +13,7 @@
 
 using namespace cnoid;
 
-class ROSGen2Controller2 : public SimpleController
+class Gen2JointController : public SimpleController
 {
     std::unique_ptr<ros::NodeHandle> node;
     ros::Subscriber subscriber;
@@ -40,7 +40,7 @@ public:
             io->enableIO(joint);
         }
 
-        subscriber = node->subscribe("/j2s7s300_driver/in/joint_velocity", 2, &ROSGen2Controller2::velocityCallback, this);
+        subscriber = node->subscribe("/j2s7s300_driver/in/joint_velocity", 2, &Gen2JointController::velocityCallback, this);
 
         return true;
     }
@@ -82,4 +82,4 @@ public:
     }
 };
 
-CNOID_IMPLEMENT_SIMPLE_CONTROLLER_FACTORY(ROSGen2Controller2)
+CNOID_IMPLEMENT_SIMPLE_CONTROLLER_FACTORY(Gen2JointController)

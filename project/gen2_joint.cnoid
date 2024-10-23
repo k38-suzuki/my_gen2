@@ -56,7 +56,7 @@ items:
               data: 
                 isNoDelayMode: false
                 controllerOptions: "velocity"
-                controller: "ROSGen2Controller2"
+                controller: "MyGen2JointController"
                 base_directory: "Controller directory"
                 reloading: false
                 export_symbols: false

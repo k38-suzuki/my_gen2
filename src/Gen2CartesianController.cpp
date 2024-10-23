@@ -1,5 +1,5 @@
 /**
-   ROS Gen2 Controller 3
+   Gen2 Cartesian Controller
    @author Kenta Suzuki
 */
 
@@ -14,7 +14,7 @@
 
 using namespace cnoid;
 
-class ROSGen2Controller3 : public SimpleController
+class Gen2CartesianController : public SimpleController
 {
     std::unique_ptr<ros::NodeHandle> node;
     ros::Subscriber subscriber;
@@ -64,7 +64,7 @@ public:
 
         timeStep = io->timeStep();
 
-        subscriber = node->subscribe("/j2s7s300_driver/in/cartesian_velocity", 2, &ROSGen2Controller3::velocityCallback, this);
+        subscriber = node->subscribe("/j2s7s300_driver/in/cartesian_velocity", 2, &Gen2CartesianController::velocityCallback, this);
 
         return true;
     }
@@ -128,4 +128,4 @@ public:
     }
 };
 
-CNOID_IMPLEMENT_SIMPLE_CONTROLLER_FACTORY(ROSGen2Controller3)
+CNOID_IMPLEMENT_SIMPLE_CONTROLLER_FACTORY(Gen2CartesianController)
