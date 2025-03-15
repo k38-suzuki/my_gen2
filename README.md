@@ -33,3 +33,7 @@ roslaunch my_gen2 gen2_joint.launch
 ```
 roslaunch my_gen2 gen2_cartesian.launch
 ```
+
+## 4. References
+- https://www.kinovarobotics.com/product/gen2-robots
+- http://www.nihonbinary.co.jp/Products/Robot/GEN2.html
